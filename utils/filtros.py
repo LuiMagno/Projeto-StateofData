@@ -116,3 +116,47 @@ FILTROS_DISPONIVEIS = {
     "planos_mudar_emprego": "2.n_planos_de_mudar_de_emprego_6m",
     "criterios_escolha_emprego": "2.o_criterios_para_escolha_de_emprego",
 }
+
+# Função principal de filtros
+
+import pandas as pd
+def aplicar_filtros(df, filtros_dict):
+    """
+    Aplica os filtros definidos no dicionário sobre o DataFrame.
+    
+    Args:
+        df (pd.DataFrame): DataFrame original.
+        filtros_dict (dict): Dicionário com filtros selecionados pelo usuário.
+
+    Returns:
+        pd.DataFrame: DataFrame filtrado.
+    """
+    df_filtrado = df.copy()
+
+    for chave, valor in filtros_dict.items():
+        if not valor:
+            continue
+
+        # Filtro de cargos (cientista, engenheiro, etc)
+        if chave == "cargo_geral" and isinstance(valor, str) and valor in MASTER_MAP:
+            config = MASTER_MAP[valor]
+            cond = pd.Series(False, index=df_filtrado.index)
+            for col in config["colunas"]:
+                for termo in config["sinonimos"]:
+                    cond = cond | df_filtrado[col].str.contains(termo, case=False, na=False)
+            df_filtrado = df_filtrado[cond]
+
+        # Filtros com múltiplas colunas binárias (ex: linguagens, cloud, BI)
+        elif isinstance(valor, list):
+            for col in valor:
+                if col in df_filtrado.columns:
+                    df_filtrado = df_filtrado[df_filtrado[col] == 1.0]
+
+        # Filtros diretos simples
+        elif chave in FILTROS_DISPONIVEIS:
+            coluna = FILTROS_DISPONIVEIS[chave]
+            if coluna in df_filtrado.columns:
+                df_filtrado = df_filtrado[df_filtrado[coluna] == valor]
+
+    return df_filtrado
+
