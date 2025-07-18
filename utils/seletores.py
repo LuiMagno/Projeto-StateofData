@@ -30,6 +30,7 @@ def selecionar_colunas_recomendador(df: pd.DataFrame) -> pd.DataFrame:
         "bancos": [col for col in df.columns if col.startswith('4.g')],
         "cloud": [col for col in df.columns if col.startswith('4.h')],
         "ia_generativa": [col for col in df.columns if col.startswith('4.l')],
+        "bi": [col for col in df.columns if col.startswith('4.j')],
         "copilot": [col for col in df.columns if col.startswith('4.m')],
         "oportunidade": ['5.b_oportunidade_buscada'],
         "eng_atividades": [col for col in df.columns if col.startswith('6.a')],
