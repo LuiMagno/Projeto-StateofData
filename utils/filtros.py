@@ -1,8 +1,26 @@
 # utils/filtros.py
+
+import pandas as pd
+
+# 🎯 Colunas de cargo
 CARGO_ATUAL = "2.f_cargo_atual"
 CARGO_DESEJADO = "5.b_oportunidade_buscada"
 
-# Mapeamento de sinônimos para buscas
+#  Função para detectar linguagens diretamente do DataFrame
+def detectar_linguagens(df: pd.DataFrame) -> list:
+    return sorted([col for col in df.columns if col.startswith("4.d.")])
+
+def detectar_bancos(df: pd.DataFrame) -> list:
+    return sorted([col for col in df.columns if col.startswith("4.g.")])
+
+def detectar_clouds(df: pd.DataFrame) -> list:
+    return sorted([col for col in df.columns if col.startswith("4.h.")])
+
+def detectar_bi_tools(df: pd.DataFrame) -> list:
+    return sorted([col for col in df.columns if col.startswith("4.j.")])
+
+
+# Mapeamento de sinônimos para buscas por cargo
 MASTER_MAP = {
     "cientista": {
         "colunas": [CARGO_ATUAL, CARGO_DESEJADO],
@@ -34,11 +52,11 @@ MASTER_MAP = {
     }
 }
 
+# ⚠️ Inicialmente as linguagens estarão vazias, mas você vai preenchê-las depois no notebook com detectar_linguagens()
 FILTROS_DISPONIVEIS = {
-    #  Informações gerais do candidato
     "cargo_geral": MASTER_MAP,
-    "cargo_atual": "2.f_cargo_atual",
-    "cargo_desejado": "5.b_oportunidade_buscada",   
+    "cargo_atual": CARGO_ATUAL,
+    "cargo_desejado": CARGO_DESEJADO,   
     "senioridade": "2.g_nivel",
     "experiencia_dados": "2.i_tempo_de_experiencia_em_dados",
     "experiencia_ti": "2.j_tempo_de_experiencia_em_ti",
@@ -49,95 +67,29 @@ FILTROS_DISPONIVEIS = {
     "regiao_onde_mora": "1.i.2_regiao_onde_mora",
     "satisfacao": "2.k_satisfeito_atualmente",
 
-    #  Habilidades técnicas — Linguagens de Programação
-    "linguagens_programacao": [
-        "4.d.1_SQL",
-        "4.d.2_R",
-        "4.d.3_Python",
-        "4.d.4_C/C++/C#",
-        "4.d.5_.NET",
-        "4.d.6_Java",
-        "4.d.7_Julia",
-        "4.d.8_SAS/Stata",
-        "4.d.9_Visual Basic/VBA",
-        "4.d.10_Scala",
-        "4.d.11_Matlab",
-        "4.d.12_Rust",
-        "4.d.13_PHP",
-        "4.d.14_JavaScript",
-        "4.d.15_Não utilizo nenhuma das linguagens listadas"
-    ],
+    # Será sobrescrito com detectar_linguagens(df)
+    "linguagens_programacao": [],
 
-    #  Habilidades técnicas — Bancos de Dados
-    "bancos_de_dados": [
-        "4.g.1_MySQL",
-        "4.g.2_Oracle",
-        "4.g.3_SQL SERVER",
-        "4.g.4_Amazon Aurora ou RDS",
-        "4.g.5_DynamoDB",
-        "4.g.6_CoachDB",
-        "4.g.8_MongoDB",
-        "4.g.9_MariaDB",
-        "4.g.12_PostgreSQL",
-        "4.g.13_ElasticSearch",
-        "4.g.22_Google BigQuery",
-        "4.g.24_Amazon Redshift",
-        "4.g.25_Amazon Athena",
-        "4.g.26_Snowflake",
-        "4.g.27_Databricks"
-    ],
+    # Outros filtros 
+    "bancos_de_dados": [],
 
-    #  Habilidades técnicas — Cloud Computing
-    "clouds": [
-        "4.h.1_Amazon Web Services (AWS)",
-        "4.h.2_Google Cloud (GCP)",      # <-- valor real no dataset
-        "4.h.3_Azure (Microsoft)",
-        "4.h.4_Oracle Cloud",
-        "4.h.5_IBM",
-        "4.h.6_Servidores On Premise/Não utilizamos Cloud",
-        "4.h.7_Cloud Própria"
-    ],
+    "clouds": [],
 
-    #  Ferramentas de BI
-    "bi_tools": [
-        "4.j.1_Microsoft PowerBI",
-        "4.j.2_Qlik View/Qlik Sense",
-        "4.j.3_Tableau",
-        "4.j.4_Metabase",
-        "4.j.5_Superset",
-        "4.j.6_Redash",
-        "4.j.7_Looker",
-        "4.j.8_Looker Studio(Google Data Studio)",
-        "4.j.9_Amazon Quicksight",
-        "4.j.17_Fazemos todas as análises utilizando apenas Excel ou planilhas do google"
-    ],
+    "bi_tools": [],
 
-    #  Preferências e critérios culturais
     "planos_mudar_emprego": "2.n_planos_de_mudar_de_emprego_6m",
     "criterios_escolha_emprego": "2.o_criterios_para_escolha_de_emprego",
 }
 
-# Função principal de filtros
-
-import pandas as pd
-def aplicar_filtros(df, filtros_dict):
-    """
-    Aplica os filtros definidos no dicionário sobre o DataFrame.
-    
-    Args:
-        df (pd.DataFrame): DataFrame original.
-        filtros_dict (dict): Dicionário com filtros selecionados pelo usuário.
-
-    Returns:
-        pd.DataFrame: DataFrame filtrado.
-    """
+# 🚦 Função principal para aplicar os filtros
+def aplicar_filtros(df: pd.DataFrame, filtros_dict: dict) -> pd.DataFrame:
     df_filtrado = df.copy()
 
     for chave, valor in filtros_dict.items():
         if not valor:
             continue
 
-        # Filtro de cargos (cientista, engenheiro, etc)
+        #  Filtro de cargos por sinônimos
         if chave == "cargo_geral" and isinstance(valor, str) and valor in MASTER_MAP:
             config = MASTER_MAP[valor]
             cond = pd.Series(False, index=df_filtrado.index)
@@ -146,17 +98,16 @@ def aplicar_filtros(df, filtros_dict):
                     cond = cond | df_filtrado[col].str.contains(termo, case=False, na=False)
             df_filtrado = df_filtrado[cond]
 
-        # Filtros com múltiplas colunas binárias (ex: linguagens, cloud, BI)
+        #  Filtros com múltiplas colunas binárias (listas)
         elif isinstance(valor, list):
             for col in valor:
                 if col in df_filtrado.columns:
                     df_filtrado = df_filtrado[df_filtrado[col] == 1.0]
 
-        # Filtros diretos simples
+        #  Filtros simples (campo:valor)
         elif chave in FILTROS_DISPONIVEIS:
             coluna = FILTROS_DISPONIVEIS[chave]
             if coluna in df_filtrado.columns:
                 df_filtrado = df_filtrado[df_filtrado[coluna] == valor]
 
     return df_filtrado
-
