@@ -19,6 +19,15 @@ def detectar_clouds(df: pd.DataFrame) -> list:
 def detectar_bi_tools(df: pd.DataFrame) -> list:
     return sorted([col for col in df.columns if col.startswith("4.j.")])
 
+# Função generalizada para extrair colunas binárias de qualquer grupo
+def detectar_colunas_do_grupo(df: pd.DataFrame, prefixo: str) -> dict:
+    """
+    Retorna um dicionário {nome_limpinho: nome_coluna_real} para colunas que começam com determinado prefixo.
+    Ex: detectar_colunas_do_grupo(df_vetorizado, "4.d.") → linguagens
+    """
+    colunas = [col for col in df.columns if col.startswith(prefixo)]
+    mapeamento = {col.split('_', 1)[1]: col for col in colunas}
+    return dict(sorted(mapeamento.items()))
 
 # Mapeamento de sinônimos para buscas por cargo
 MASTER_MAP = {
